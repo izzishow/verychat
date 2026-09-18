@@ -1,0 +1,8 @@
+﻿{
+  "mcpServers": {
+    "verycloud": {
+      "command": "vc",
+      "args": ["mcp"]
+    }
+  }
+}
