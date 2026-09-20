@@ -14,6 +14,15 @@ const lightboxModal = document.getElementById("lightbox-modal");
 const lightboxImg = document.getElementById("lightbox-img");
 const lightboxClose = document.getElementById("lightbox-close");
 
+// Theme Modal Elements
+const themeBtn = document.getElementById("theme-btn");
+const themeModal = document.getElementById("theme-modal");
+const themeCloseBtn = document.getElementById("theme-close-btn");
+const themeOptions = document.querySelectorAll(".theme-option");
+const customBgInput = document.getElementById("custom-bg-input");
+const uploadBgBtn = document.getElementById("upload-bg-btn");
+const resetBgBtn = document.getElementById("reset-bg-btn");
+
 let currentImageDataUrl = null;
 let currentImageName = null;
 
@@ -27,7 +36,90 @@ usernameInput.addEventListener("change", () => {
   localStorage.setItem("verychat_user", val);
 });
 
-// Attach Button
+// ---------- Theme & Background Wallpaper Logic ----------
+function applySavedTheme() {
+  try {
+    const raw = localStorage.getItem("verychat_bg");
+    if (!raw) return;
+    const bgConfig = JSON.parse(raw);
+    if (bgConfig.type === "preset") {
+      setPresetTheme(bgConfig.value, false);
+    } else if (bgConfig.type === "custom" && bgConfig.value) {
+      setCustomBackground(bgConfig.value, false);
+    }
+  } catch (e) {
+    console.error("Error loading saved theme:", e);
+  }
+}
+
+function setPresetTheme(themeName, save = true) {
+  document.body.style.backgroundImage = "";
+  document.body.className = `theme-${themeName}`;
+  themeOptions.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.theme === themeName);
+  });
+  if (save) {
+    localStorage.setItem("verychat_bg", JSON.stringify({ type: "preset", value: themeName }));
+  }
+}
+
+function setCustomBackground(dataUrl, save = true) {
+  document.body.className = "";
+  document.body.style.backgroundImage = `url('${dataUrl}')`;
+  themeOptions.forEach((btn) => btn.classList.remove("active"));
+  if (save) {
+    localStorage.setItem("verychat_bg", JSON.stringify({ type: "custom", value: dataUrl }));
+  }
+}
+
+themeBtn.addEventListener("click", () => {
+  themeModal.style.display = "flex";
+});
+
+themeCloseBtn.addEventListener("click", () => {
+  themeModal.style.display = "none";
+});
+
+themeModal.addEventListener("click", (e) => {
+  if (e.target === themeModal) {
+    themeModal.style.display = "none";
+  }
+});
+
+themeOptions.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const theme = btn.dataset.theme;
+    setPresetTheme(theme);
+    themeModal.style.display = "none";
+  });
+});
+
+uploadBgBtn.addEventListener("click", () => {
+  customBgInput.click();
+});
+
+customBgInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    alert("이미지 파일만 설정할 수 있습니다.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    setCustomBackground(ev.target.result);
+    themeModal.style.display = "none";
+  };
+  reader.readAsDataURL(file);
+});
+
+resetBgBtn.addEventListener("click", () => {
+  localStorage.removeItem("verychat_bg");
+  setPresetTheme("default", false);
+  themeModal.style.display = "none";
+});
+
+// ---------- Image Attachment Logic ----------
 attachBtn.addEventListener("click", () => {
   imageFileInput.click();
 });
@@ -59,7 +151,6 @@ function handleImageFile(file) {
   reader.readAsDataURL(file);
 }
 
-// Remove preview
 removePreviewBtn.addEventListener("click", () => {
   clearImagePreview();
 });
@@ -219,7 +310,6 @@ chatForm.addEventListener("submit", async (e) => {
   sendBtn.disabled = true;
 
   try {
-    // If there is an image to upload
     if (currentImageDataUrl) {
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
@@ -239,7 +329,6 @@ chatForm.addEventListener("submit", async (e) => {
       }
     }
 
-    // Send chat message
     const msgRes = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -266,5 +355,6 @@ chatForm.addEventListener("submit", async (e) => {
 });
 
 // Initialize
+applySavedTheme();
 loadHistory();
 connectStream();

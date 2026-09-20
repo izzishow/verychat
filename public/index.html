@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="theme-default">
   <div class="chat-container" id="drop-zone">
     <!-- Header -->
     <header class="chat-header">
@@ -20,6 +20,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button type="button" id="theme-btn" class="header-icon-btn" title="배경화면 / 테마 설정">🎨</button>
         <input type="text" id="username-input" placeholder="닉네임 설정..." value="사용자1" />
       </div>
     </header>
@@ -41,7 +42,7 @@
     <!-- Input Bar -->
     <footer class="input-area">
       <form id="chat-form">
-        <!-- Hidden file input -->
+        <!-- Hidden file input for chat image -->
         <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
 
         <!-- Attachment Button -->
@@ -73,6 +74,51 @@
     <!-- Drop overlay -->
     <div class="drop-overlay" id="drop-overlay">
       <div class="drop-text">📷 이미지를 여기에 놓으세요</div>
+    </div>
+  </div>
+
+  <!-- Theme / Background Settings Modal -->
+  <div class="theme-modal" id="theme-modal">
+    <div class="theme-modal-card">
+      <div class="theme-modal-header">
+        <h3>🎨 배경화면 및 테마 설정</h3>
+        <button type="button" class="modal-close-btn" id="theme-close-btn">&times;</button>
+      </div>
+
+      <div class="theme-section">
+        <h4>추천 컬러 테마</h4>
+        <div class="theme-grid">
+          <button type="button" class="theme-option" data-theme="default">
+            <span class="theme-swatch swatch-default"></span>
+            <span>네뷸라 블루</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="cyberpunk">
+            <span class="theme-swatch swatch-cyberpunk"></span>
+            <span>사이버펑크</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="sunset">
+            <span class="theme-swatch swatch-sunset"></span>
+            <span>선셋 글로우</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="emerald">
+            <span class="theme-swatch swatch-emerald"></span>
+            <span>에메랄드</span>
+          </button>
+          <button type="button" class="theme-option" data-theme="oled">
+            <span class="theme-swatch swatch-oled"></span>
+            <span>OLED 블랙</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="theme-section">
+        <h4>내 이미지로 배경화면 설정</h4>
+        <div class="custom-bg-actions">
+          <input type="file" id="custom-bg-input" accept="image/*" style="display: none;" />
+          <button type="button" id="upload-bg-btn" class="btn-secondary">🖼️ 사진 선택하기</button>
+          <button type="button" id="reset-bg-btn" class="btn-text">기본 배경으로 초기화</button>
+        </div>
+      </div>
     </div>
   </div>
 
