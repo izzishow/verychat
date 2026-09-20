@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="chat-container">
+  <div class="chat-container" id="drop-zone">
     <!-- Header -->
     <header class="chat-header">
       <div class="brand">
@@ -29,15 +29,37 @@
       <!-- Messages rendered dynamically -->
     </main>
 
+    <!-- Image Upload Preview Bar -->
+    <div class="image-preview-bar" id="image-preview-bar" style="display: none;">
+      <div class="preview-item">
+        <img id="preview-img" src="" alt="업로드 미리보기" />
+        <button type="button" id="remove-preview-btn" title="이미지 취소">&times;</button>
+      </div>
+      <span class="preview-filename" id="preview-filename"></span>
+    </div>
+
     <!-- Input Bar -->
     <footer class="input-area">
       <form id="chat-form">
+        <!-- Hidden file input -->
+        <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
+
+        <!-- Attachment Button -->
+        <button type="button" id="attach-btn" class="icon-btn" title="사진/이미지 첨부">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+          </svg>
+        </button>
+
+        <!-- Text Input -->
         <input
           type="text"
           id="message-input"
-          placeholder="메시지를 입력하세요 (Enter로 전송)..."
+          placeholder="메시지 또는 사진 첨부 (이미지 드래그/복사 붙여넣기 지원)..."
           autocomplete="off"
         />
+
+        <!-- Send Button -->
         <button type="submit" id="send-btn">
           <span>전송</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -47,6 +69,17 @@
         </button>
       </form>
     </footer>
+
+    <!-- Drop overlay -->
+    <div class="drop-overlay" id="drop-overlay">
+      <div class="drop-text">📷 이미지를 여기에 놓으세요</div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal -->
+  <div class="lightbox-modal" id="lightbox-modal">
+    <span class="lightbox-close" id="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img" alt="크게 보기" />
   </div>
 
   <script src="app.js"></script>
