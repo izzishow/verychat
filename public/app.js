@@ -3,10 +3,13 @@ const chatForm = document.getElementById("chat-form");
 const messageInput = document.getElementById("message-input");
 const usernameInput = document.getElementById("username-input");
 const attachBtn = document.getElementById("attach-btn");
-const imageFileInput = document.getElementById("image-file-input");
-const imagePreviewBar = document.getElementById("image-preview-bar");
+const fileInput = document.getElementById("file-input");
+const filePreviewBar = document.getElementById("file-preview-bar");
 const previewImg = document.getElementById("preview-img");
+const previewVideo = document.getElementById("preview-video");
+const previewFileIcon = document.getElementById("preview-file-icon");
 const previewFilename = document.getElementById("preview-filename");
+const previewFilesize = document.getElementById("preview-filesize");
 const removePreviewBtn = document.getElementById("remove-preview-btn");
 const dropZone = document.getElementById("drop-zone");
 const dropOverlay = document.getElementById("drop-overlay");
@@ -23,8 +26,10 @@ const customBgInput = document.getElementById("custom-bg-input");
 const uploadBgBtn = document.getElementById("upload-bg-btn");
 const resetBgBtn = document.getElementById("reset-bg-btn");
 
-let currentImageDataUrl = null;
-let currentImageName = null;
+let currentFileDataUrl = null;
+let currentFileName = null;
+let currentFileSize = null;
+let currentFileType = null;
 
 // Username persistence
 const savedUser = localStorage.getItem("verychat_user");
@@ -119,49 +124,107 @@ resetBgBtn.addEventListener("click", () => {
   themeModal.style.display = "none";
 });
 
-// ---------- Image Attachment Logic ----------
+// ---------- File / Video / Image Attachment Logic ----------
 attachBtn.addEventListener("click", () => {
-  imageFileInput.click();
+  fileInput.click();
 });
 
-imageFileInput.addEventListener("change", (e) => {
+fileInput.addEventListener("change", (e) => {
   const file = e.target.files[0];
-  if (file) handleImageFile(file);
+  if (file) handleFile(file);
 });
 
-function handleImageFile(file) {
-  if (!file.type.startsWith("image/")) {
-    alert("이미지 파일만 업로드할 수 있습니다.");
-    return;
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    alert("이미지 크기는 10MB 이하만 가능합니다.");
+function formatBytes(bytes) {
+  if (!bytes || isNaN(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getFileIcon(fileName, category) {
+  if (!fileName) return "📎";
+  const ext = fileName.split(".").pop().toLowerCase();
+  if (["txt", "md", "log", "json", "csv", "xml", "js", "ts", "py", "html", "css"].includes(ext)) return "📝";
+  if (["pdf"].includes(ext)) return "📕";
+  if (["doc", "docx"].includes(ext)) return "📄";
+  if (["xls", "xlsx"].includes(ext)) return "📊";
+  if (["ppt", "pptx"].includes(ext)) return "📑";
+  if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return "📦";
+  if (["mp3", "wav", "ogg", "m4a", "flac"].includes(ext)) return "🎵";
+  if (["mp4", "webm", "mov", "avi", "mkv"].includes(ext)) return "🎬";
+  if (category === "video") return "🎬";
+  if (category === "text") return "📝";
+  return "📎";
+}
+
+function handleFile(file) {
+  // 50MB size limit
+  if (file.size > 50 * 1024 * 1024) {
+    alert("파일 크기는 50MB 이하만 첨부할 수 있습니다.");
     return;
   }
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    currentImageDataUrl = e.target.result;
-    currentImageName = file.name;
-    previewImg.src = currentImageDataUrl;
+    currentFileDataUrl = e.target.result;
+    currentFileName = file.name;
+    currentFileSize = file.size;
+
+    const mime = (file.type || "").toLowerCase();
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    // Determine category
+    let category = "file";
+    if (mime.startsWith("image/")) category = "image";
+    else if (mime.startsWith("video/") || ["mp4", "webm", "mov", "avi", "mkv"].includes(ext)) category = "video";
+    else if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "m4a"].includes(ext)) category = "audio";
+    else if (mime.startsWith("text/") || ["txt", "md", "log", "json", "csv"].includes(ext)) category = "text";
+    else if (["pdf", "doc", "docx"].includes(ext)) category = "document";
+
+    currentFileType = category;
+
+    // Reset preview elements
+    previewImg.style.display = "none";
+    previewVideo.style.display = "none";
+    previewFileIcon.style.display = "none";
+
+    if (category === "image") {
+      previewImg.src = currentFileDataUrl;
+      previewImg.style.display = "block";
+    } else if (category === "video") {
+      previewVideo.src = currentFileDataUrl;
+      previewVideo.style.display = "block";
+    } else {
+      previewFileIcon.textContent = getFileIcon(file.name, category);
+      previewFileIcon.style.display = "block";
+    }
+
     previewFilename.textContent = file.name;
-    imagePreviewBar.style.display = "flex";
+    previewFilesize.textContent = formatBytes(file.size);
+    filePreviewBar.style.display = "flex";
     messageInput.focus();
   };
   reader.readAsDataURL(file);
 }
 
 removePreviewBtn.addEventListener("click", () => {
-  clearImagePreview();
+  clearFilePreview();
 });
 
-function clearImagePreview() {
-  currentImageDataUrl = null;
-  currentImageName = null;
-  imageFileInput.value = "";
+function clearFilePreview() {
+  currentFileDataUrl = null;
+  currentFileName = null;
+  currentFileSize = null;
+  currentFileType = null;
+  fileInput.value = "";
   previewImg.src = "";
+  previewVideo.src = "";
+  previewImg.style.display = "none";
+  previewVideo.style.display = "none";
+  previewFileIcon.style.display = "none";
   previewFilename.textContent = "";
-  imagePreviewBar.style.display = "none";
+  previewFilesize.textContent = "";
+  filePreviewBar.style.display = "none";
 }
 
 // Drag & Drop
@@ -187,19 +250,22 @@ let dragCounter = 0;
 
 dropZone.addEventListener("drop", (e) => {
   const files = e.dataTransfer.files;
-  if (files.length > 0 && files[0].type.startsWith("image/")) {
-    handleImageFile(files[0]);
+  if (files && files.length > 0) {
+    handleFile(files[0]);
   }
 });
 
-// Paste screenshot from clipboard
+// Paste from clipboard
 document.addEventListener("paste", (e) => {
-  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  const items = (e.clipboardData || e.originalEvent.clipboardData)?.items;
+  if (!items) return;
   for (let item of items) {
-    if (item.kind === "file" && item.type.startsWith("image/")) {
+    if (item.kind === "file") {
       const file = item.getAsFile();
-      handleImageFile(file);
-      break;
+      if (file) {
+        handleFile(file);
+        break;
+      }
     }
   }
 });
@@ -210,12 +276,44 @@ function appendMessage(msg) {
   const div = document.createElement("div");
   div.className = `message-item ${isSelf ? "self" : ""}`;
 
-  let imageHtml = "";
-  if (msg.imageUrl) {
-    imageHtml = `
-      <div class="message-image-wrap" onclick="openLightbox('${escapeHtml(msg.imageUrl)}')">
-        <img src="${escapeHtml(msg.imageUrl)}" alt="첨부 이미지" class="message-image" loading="lazy" />
+  let attachmentHtml = "";
+
+  // 1. Image
+  if (msg.fileCategory === "image" || (msg.imageUrl && !msg.fileCategory)) {
+    const url = msg.imageUrl || msg.fileUrl;
+    attachmentHtml = `
+      <div class="message-image-wrap" onclick="openLightbox('${escapeHtml(url)}')">
+        <img src="${escapeHtml(url)}" alt="첨부 이미지" class="message-image" loading="lazy" />
       </div>
+    `;
+  }
+  // 2. Video
+  else if (msg.fileCategory === "video" && msg.fileUrl) {
+    attachmentHtml = `
+      <div class="message-video-wrap">
+        <video src="${escapeHtml(msg.fileUrl)}" class="message-video" controls playsinline preload="metadata"></video>
+      </div>
+    `;
+  }
+  // 3. Document, Text file, Archive, or other files
+  else if (msg.fileUrl) {
+    const icon = getFileIcon(msg.fileName, msg.fileCategory);
+    const sizeStr = formatBytes(msg.fileSize);
+    attachmentHtml = `
+      <a href="${escapeHtml(msg.fileUrl)}" download="${escapeHtml(msg.fileName || 'file')}" class="message-file-card" target="_blank" rel="noopener">
+        <div class="file-card-icon">${icon}</div>
+        <div class="file-card-details">
+          <div class="file-card-name" title="${escapeHtml(msg.fileName || '첨부파일')}">${escapeHtml(msg.fileName || '첨부파일')}</div>
+          ${sizeStr ? `<div class="file-card-size">${sizeStr}</div>` : ""}
+        </div>
+        <div class="file-card-action" title="다운로드">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </div>
+      </a>
     `;
   }
 
@@ -228,7 +326,7 @@ function appendMessage(msg) {
     <div class="avatar">${msg.avatar || "👤"}</div>
     <div class="message-bubble">
       <div class="sender-name">${escapeHtml(msg.user)}</div>
-      ${imageHtml}
+      ${attachmentHtml}
       ${textHtml}
       <div class="message-time">${msg.time}</div>
     </div>
@@ -297,33 +395,40 @@ function connectStream() {
   };
 }
 
-// Submit message & upload image
+// Submit message & upload file
 chatForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const text = messageInput.value.trim();
-  if (!text && !currentImageDataUrl) return;
+  if (!text && !currentFileDataUrl) return;
 
   const user = usernameInput.value.trim() || "사용자1";
-  let uploadedImageUrl = null;
+  let uploadedFileUrl = null;
+  let uploadedFileName = currentFileName;
+  let uploadedFileSize = currentFileSize;
+  let uploadedFileCategory = currentFileType;
 
   const sendBtn = document.getElementById("send-btn");
   sendBtn.disabled = true;
 
   try {
-    if (currentImageDataUrl) {
+    if (currentFileDataUrl) {
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          dataUrl: currentImageDataUrl,
-          filename: currentImageName,
+          dataUrl: currentFileDataUrl,
+          filename: currentFileName,
+          size: currentFileSize,
         }),
       });
       const uploadData = await uploadRes.json();
       if (uploadData.success) {
-        uploadedImageUrl = uploadData.url;
+        uploadedFileUrl = uploadData.url;
+        uploadedFileName = uploadData.name || currentFileName;
+        uploadedFileSize = uploadData.size || currentFileSize;
+        uploadedFileCategory = uploadData.fileCategory || currentFileType;
       } else {
-        alert("이미지 업로드에 실패했습니다.");
+        alert("파일 업로드에 실패했습니다.");
         sendBtn.disabled = false;
         return;
       }
@@ -335,13 +440,17 @@ chatForm.addEventListener("submit", async (e) => {
       body: JSON.stringify({
         user,
         text,
-        imageUrl: uploadedImageUrl,
+        fileUrl: uploadedFileUrl,
+        fileName: uploadedFileName,
+        fileSize: uploadedFileSize,
+        fileCategory: uploadedFileCategory,
+        imageUrl: uploadedFileCategory === "image" ? uploadedFileUrl : null,
       }),
     });
 
     if (msgRes.ok) {
       messageInput.value = "";
-      clearImagePreview();
+      clearFilePreview();
       messageInput.focus();
     } else {
       alert("메시지 전송에 실패했습니다.");

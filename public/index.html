@@ -30,23 +30,33 @@
       <!-- Messages rendered dynamically -->
     </main>
 
-    <!-- Image Upload Preview Bar -->
-    <div class="image-preview-bar" id="image-preview-bar" style="display: none;">
+    <!-- File Upload Preview Bar -->
+    <div class="file-preview-bar" id="file-preview-bar" style="display: none;">
       <div class="preview-item">
-        <img id="preview-img" src="" alt="업로드 미리보기" />
-        <button type="button" id="remove-preview-btn" title="이미지 취소">&times;</button>
+        <img id="preview-img" src="" alt="미리보기" style="display: none;" />
+        <video id="preview-video" style="display: none;" muted></video>
+        <div id="preview-file-icon" class="preview-file-badge" style="display: none;">📄</div>
+        <button type="button" id="remove-preview-btn" title="첨부 취소">&times;</button>
       </div>
-      <span class="preview-filename" id="preview-filename"></span>
+      <div class="preview-details">
+        <span class="preview-filename" id="preview-filename"></span>
+        <span class="preview-filesize" id="preview-filesize"></span>
+      </div>
     </div>
 
     <!-- Input Bar -->
     <footer class="input-area">
       <form id="chat-form">
-        <!-- Hidden file input for chat image -->
-        <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
+        <!-- Hidden file input for all attachments -->
+        <input
+          type="file"
+          id="file-input"
+          accept="image/*,video/*,text/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.json,.csv,.log,.md"
+          style="display: none;"
+        />
 
         <!-- Attachment Button -->
-        <button type="button" id="attach-btn" class="icon-btn" title="사진/이미지 첨부">
+        <button type="button" id="attach-btn" class="icon-btn" title="파일 첨부 (사진, 동영상, 텍스트 문서 등)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
           </svg>
@@ -56,7 +66,7 @@
         <input
           type="text"
           id="message-input"
-          placeholder="메시지 또는 사진 첨부 (이미지 드래그/복사 붙여넣기 지원)..."
+          placeholder="메시지 입력 (사진, 동영상, 파일 드래그/붙여넣기 지원)..."
           autocomplete="off"
         />
 
@@ -73,7 +83,7 @@
 
     <!-- Drop overlay -->
     <div class="drop-overlay" id="drop-overlay">
-      <div class="drop-text">📷 이미지를 여기에 놓으세요</div>
+      <div class="drop-text">📁 사진, 동영상, 파일을 여기에 놓으세요</div>
     </div>
   </div>
 
@@ -122,7 +132,7 @@
     </div>
   </div>
 
-  <!-- Lightbox Modal -->
+  <!-- Lightbox Modal for Images -->
   <div class="lightbox-modal" id="lightbox-modal">
     <span class="lightbox-close" id="lightbox-close">&times;</span>
     <img class="lightbox-content" id="lightbox-img" alt="크게 보기" />
