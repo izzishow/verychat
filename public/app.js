@@ -25,6 +25,17 @@ const themeOptions = document.querySelectorAll(".theme-option");
 const customBgInput = document.getElementById("custom-bg-input");
 const uploadBgBtn = document.getElementById("upload-bg-btn");
 const resetBgBtn = document.getElementById("reset-bg-btn");
+const backBtn = document.getElementById("back-btn");
+
+if (backBtn) {
+  backBtn.addEventListener("click", () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.reload();
+    }
+  });
+}
 
 let currentFileDataUrl = null;
 let currentFileName = null;
@@ -227,28 +238,40 @@ function clearFilePreview() {
   filePreviewBar.style.display = "none";
 }
 
+// Prevent browser default file open behavior when dragging
+window.addEventListener("dragover", (e) => e.preventDefault(), false);
+window.addEventListener("drop", (e) => e.preventDefault(), false);
+
 // Drag & Drop
 let dragCounter = 0;
-["dragenter", "dragover"].forEach((eventName) => {
-  dropZone.addEventListener(eventName, (e) => {
-    e.preventDefault();
-    dragCounter++;
-    dropOverlay.classList.add("active");
-  });
+
+dropZone.addEventListener("dragenter", (e) => {
+  e.preventDefault();
+  dragCounter++;
+  dropOverlay.classList.add("active");
 });
 
-["dragleave", "drop"].forEach((eventName) => {
-  dropZone.addEventListener(eventName, (e) => {
-    e.preventDefault();
-    dragCounter--;
-    if (dragCounter <= 0) {
-      dragCounter = 0;
-      dropOverlay.classList.remove("active");
-    }
-  });
+dropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = "copy";
+  }
+});
+
+dropZone.addEventListener("dragleave", (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    dropOverlay.classList.remove("active");
+  }
 });
 
 dropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  dropOverlay.classList.remove("active");
+
   const files = e.dataTransfer.files;
   if (files && files.length > 0) {
     handleFile(files[0]);

@@ -63,6 +63,38 @@ body.theme-oled {
   background: rgba(26, 34, 52, 0.5);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-back-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: #f1f5f9;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.header-back-btn:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: #6366f1;
+  color: #818cf8;
+  transform: translateX(-2px);
+}
+
+.header-back-btn:active {
+  transform: translateX(-4px) scale(0.95);
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -523,12 +555,14 @@ body.theme-oled {
   display: none;
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(4px);
   border: 2px dashed #6366f1;
   border-radius: 24px;
   z-index: 50;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
 }
 
 .drop-overlay.active {
