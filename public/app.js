@@ -25,17 +25,7 @@ const themeOptions = document.querySelectorAll(".theme-option");
 const customBgInput = document.getElementById("custom-bg-input");
 const uploadBgBtn = document.getElementById("upload-bg-btn");
 const resetBgBtn = document.getElementById("reset-bg-btn");
-const backBtn = document.getElementById("back-btn");
-
-if (backBtn) {
-  backBtn.addEventListener("click", () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.reload();
-    }
-  });
-}
+const dropBackBtn = document.getElementById("drop-back-btn");
 
 let currentFileDataUrl = null;
 let currentFileName = null;
@@ -245,6 +235,39 @@ window.addEventListener("drop", (e) => e.preventDefault(), false);
 // Drag & Drop
 let dragCounter = 0;
 
+function dismissDropOverlay() {
+  dragCounter = 0;
+  if (dropOverlay) {
+    dropOverlay.classList.remove("active");
+  }
+}
+
+if (dropBackBtn) {
+  dropBackBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dismissDropOverlay();
+  });
+}
+
+if (dropOverlay) {
+  dropOverlay.addEventListener("click", (e) => {
+    if (e.target === dropOverlay) {
+      dismissDropOverlay();
+    }
+  });
+}
+
+// ESC key to dismiss overlay or cancel preview
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (dropOverlay && dropOverlay.classList.contains("active")) {
+      dismissDropOverlay();
+    } else if (filePreviewBar && filePreviewBar.style.display !== "none") {
+      clearFilePreview();
+    }
+  }
+});
+
 dropZone.addEventListener("dragenter", (e) => {
   e.preventDefault();
   dragCounter++;
@@ -262,15 +285,13 @@ dropZone.addEventListener("dragleave", (e) => {
   e.preventDefault();
   dragCounter--;
   if (dragCounter <= 0) {
-    dragCounter = 0;
-    dropOverlay.classList.remove("active");
+    dismissDropOverlay();
   }
 });
 
 dropZone.addEventListener("drop", (e) => {
   e.preventDefault();
-  dragCounter = 0;
-  dropOverlay.classList.remove("active");
+  dismissDropOverlay();
 
   const files = e.dataTransfer.files;
   if (files && files.length > 0) {
