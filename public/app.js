@@ -28,6 +28,24 @@ const resetBgBtn = document.getElementById("reset-bg-btn");
 const dropBackBtn = document.getElementById("drop-back-btn");
 const headerBackBtn = document.getElementById("header-back-btn");
 
+// Google Auth Elements
+const googleLoginBtn = document.getElementById("google-login-btn");
+const userProfileBar = document.getElementById("user-profile-bar");
+const userAvatarImg = document.getElementById("user-avatar-img");
+const userNameDisplay = document.getElementById("user-name-display");
+const logoutBtn = document.getElementById("logout-btn");
+const oauthModal = document.getElementById("oauth-modal");
+const oauthCloseBtn = document.getElementById("oauth-close-btn");
+const redirectUriDisplay = document.getElementById("redirect-uri-display");
+const redirectUriLocal = document.getElementById("redirect-uri-local");
+const copyUriBtn = document.getElementById("copy-uri-btn");
+const copyUriLocalBtn = document.getElementById("copy-uri-local-btn");
+const testLoginBtn1 = document.getElementById("test-login-btn-1");
+const testLoginBtn2 = document.getElementById("test-login-btn-2");
+
+let currentUser = null;
+let isOAuthConfigured = false;
+
 let currentFileDataUrl = null;
 let currentFileName = null;
 let currentFileSize = null;
@@ -402,10 +420,18 @@ function appendMessage(msg) {
     textHtml = `<div class="message-text">${escapeHtml(msg.text)}</div>`;
   }
 
+  const isGoogle = Boolean(msg.isGoogleUser || (msg.avatar && msg.avatar.startsWith("http")));
+  let avatarHtml = `<div class="avatar">${escapeHtml(msg.avatar || "👤")}</div>`;
+  if (msg.avatar && msg.avatar.startsWith("http")) {
+    avatarHtml = `<img src="${escapeHtml(msg.avatar)}" class="message-user-avatar" alt="${escapeHtml(msg.user)}" />`;
+  }
+
+  const verifiedBadge = isGoogle ? `<span class="verified-dot" title="Google 인증 계정">✓</span>` : "";
+
   div.innerHTML = `
-    <div class="avatar">${msg.avatar || "👤"}</div>
+    ${avatarHtml}
     <div class="message-bubble">
-      <div class="sender-name">${escapeHtml(msg.user)}</div>
+      <div class="sender-name">${escapeHtml(msg.user)}${verifiedBadge}</div>
       ${attachmentHtml}
       ${textHtml}
       <div class="message-time">${msg.time}</div>
@@ -481,7 +507,7 @@ chatForm.addEventListener("submit", async (e) => {
   const text = messageInput.value.trim();
   if (!text && !currentFileDataUrl) return;
 
-  const user = usernameInput.value.trim() || "사용자1";
+  const user = currentUser ? currentUser.name : (usernameInput.value.trim() || "사용자1");
   let uploadedFileUrl = null;
   let uploadedFileName = currentFileName;
   let uploadedFileSize = currentFileSize;
@@ -546,7 +572,170 @@ chatForm.addEventListener("submit", async (e) => {
   }
 });
 
+// ==========================================
+// Google Authentication & User Session Logic
+// ==========================================
+async function checkAuthStatus() {
+  try {
+    const res = await fetch("/api/auth/me");
+    const data = await res.json();
+    isOAuthConfigured = Boolean(data.configured);
+
+    if (data.authenticated && data.user) {
+      currentUser = data.user;
+      if (googleLoginBtn) googleLoginBtn.style.display = "none";
+      if (usernameInput) usernameInput.style.display = "none";
+      if (userProfileBar) userProfileBar.style.display = "inline-flex";
+      if (userNameDisplay) {
+        userNameDisplay.textContent = currentUser.name;
+        userNameDisplay.title = `${currentUser.email} (${new Date(currentUser.created_at).toLocaleDateString()} 가입)`;
+      }
+      if (userAvatarImg) {
+        userAvatarImg.src =
+          currentUser.picture ||
+          `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(currentUser.email)}`;
+      }
+    } else {
+      currentUser = null;
+      if (googleLoginBtn) googleLoginBtn.style.display = "inline-flex";
+      if (usernameInput) usernameInput.style.display = "inline-block";
+      if (userProfileBar) userProfileBar.style.display = "none";
+    }
+
+    // Update redirect URI display if modal elements exist
+    const configRes = await fetch("/api/auth/config");
+    const configData = await configRes.json();
+    if (configData && configData.redirectUri && redirectUriDisplay) {
+      redirectUriDisplay.value = configData.redirectUri;
+    }
+  } catch (err) {
+    console.error("Failed to check auth status:", err);
+  }
+}
+
+// Google Login Button Click
+if (googleLoginBtn) {
+  googleLoginBtn.addEventListener("click", (e) => {
+    if (!isOAuthConfigured) {
+      e.preventDefault();
+      if (oauthModal) oauthModal.style.display = "flex";
+    }
+  });
+}
+
+// Logout Button Click
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await fetch("/auth/logout", { headers: { Accept: "application/json" } });
+      currentUser = null;
+      await checkAuthStatus();
+      alert("로그아웃되었습니다.");
+    } catch (err) {
+      window.location.href = "/auth/logout";
+    }
+  });
+}
+
+// OAuth Modal Close
+if (oauthCloseBtn && oauthModal) {
+  oauthCloseBtn.addEventListener("click", () => {
+    oauthModal.style.display = "none";
+  });
+  oauthModal.addEventListener("click", (e) => {
+    if (e.target === oauthModal) {
+      oauthModal.style.display = "none";
+    }
+  });
+}
+
+// Copy Redirect URI Buttons
+if (copyUriBtn && redirectUriDisplay) {
+  copyUriBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(redirectUriDisplay.value);
+      copyUriBtn.textContent = "복사 완료! ✓";
+      setTimeout(() => (copyUriBtn.textContent = "복사"), 2000);
+    } catch (e) {
+      redirectUriDisplay.select();
+      document.execCommand("copy");
+      copyUriBtn.textContent = "복사 완료! ✓";
+      setTimeout(() => (copyUriBtn.textContent = "복사"), 2000);
+    }
+  });
+}
+
+if (copyUriLocalBtn && redirectUriLocal) {
+  copyUriLocalBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(redirectUriLocal.value);
+      copyUriLocalBtn.textContent = "복사 완료! ✓";
+      setTimeout(() => (copyUriLocalBtn.textContent = "로컬용 복사"), 2000);
+    } catch (e) {
+      redirectUriLocal.select();
+      document.execCommand("copy");
+      copyUriLocalBtn.textContent = "복사 완료! ✓";
+      setTimeout(() => (copyUriLocalBtn.textContent = "로컬용 복사"), 2000);
+    }
+  });
+}
+
+// Test Login Actions
+async function performTestLogin(email, name) {
+  try {
+    const res = await fetch("/api/auth/test-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (oauthModal) oauthModal.style.display = "none";
+      await checkAuthStatus();
+      alert(`🎉 환영합니다! ${data.user.name} (${data.user.email}) 계정으로 ${data.isNew ? "신규 회원가입" : "로그인"}되었습니다.`);
+    } else {
+      alert("테스트 로그인 실패: " + (data.error || "오류"));
+    }
+  } catch (err) {
+    alert("테스트 로그인 요청 실패: " + err.message);
+  }
+}
+
+if (testLoginBtn1) {
+  testLoginBtn1.addEventListener("click", () => performTestLogin("hong@gmail.com", "홍길동"));
+}
+if (testLoginBtn2) {
+  testLoginBtn2.addEventListener("click", () => performTestLogin("chulsoo@gmail.com", "김철수"));
+}
+
+// URL Query Notifications
+function handleUrlQueryParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("login_success")) {
+    const isNew = params.get("new_user");
+    setTimeout(() => {
+      alert(isNew ? "🎉 Google 계정으로 회원가입이 완료되었습니다!" : "🎉 Google 계정으로 로그인되었습니다!");
+    }, 300);
+    history.replaceState(null, "", window.location.pathname);
+  } else if (params.get("auth_error")) {
+    const err = params.get("auth_error");
+    if (err === "setup_required") {
+      if (oauthModal) oauthModal.style.display = "flex";
+    } else {
+      alert("Google 인증 처리 중 오류가 발생했습니다: " + err);
+    }
+    history.replaceState(null, "", window.location.pathname);
+  } else if (params.get("logout")) {
+    setTimeout(() => {
+      alert("로그아웃되었습니다.");
+    }, 300);
+    history.replaceState(null, "", window.location.pathname);
+  }
+}
+
 // Initialize
 applySavedTheme();
 loadHistory();
 connectStream();
+checkAuthStatus();
+handleUrlQueryParams();

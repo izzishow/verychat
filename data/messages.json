@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1,
+    "user": "VeryCloud Bot",
+    "text": "🎉 VeryChat에 오신 것을 환영합니다! Google 계정으로 로그인하여 자유롭게 대화와 파일을 공유해 보세요.",
+    "imageUrl": null,
+    "fileUrl": null,
+    "fileName": null,
+    "fileSize": null,
+    "fileCategory": null,
+    "time": "오후 08:13",
+    "avatar": "🚀"
+  },
+  {
+    "id": 1791977070502,
+    "user": "테스터1_업데이트",
+    "userId": "usr_9c895bb896c5459b",
+    "isGoogleUser": true,
+    "text": "안녕하세요, Google 인증 사용자입니다!",
+    "imageUrl": null,
+    "fileUrl": null,
+    "fileName": null,
+    "fileSize": null,
+    "fileCategory": "file",
+    "time": "오후 08:24",
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=tester_1791977070139%40gmail.com"
+  }
+]
