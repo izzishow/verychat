@@ -26,6 +26,7 @@ const customBgInput = document.getElementById("custom-bg-input");
 const uploadBgBtn = document.getElementById("upload-bg-btn");
 const resetBgBtn = document.getElementById("reset-bg-btn");
 const dropBackBtn = document.getElementById("drop-back-btn");
+const headerBackBtn = document.getElementById("header-back-btn");
 
 let currentFileDataUrl = null;
 let currentFileName = null;
@@ -203,14 +204,16 @@ function handleFile(file) {
     previewFilename.textContent = file.name;
     previewFilesize.textContent = formatBytes(file.size);
     filePreviewBar.style.display = "flex";
+    if (headerBackBtn) {
+      headerBackBtn.style.display = "inline-flex";
+    }
+    if (!history.state || history.state.screen !== "file_attached") {
+      history.pushState({ screen: "file_attached" }, "");
+    }
     messageInput.focus();
   };
   reader.readAsDataURL(file);
 }
-
-removePreviewBtn.addEventListener("click", () => {
-  clearFilePreview();
-});
 
 function clearFilePreview() {
   currentFileDataUrl = null;
@@ -226,7 +229,40 @@ function clearFilePreview() {
   previewFilename.textContent = "";
   previewFilesize.textContent = "";
   filePreviewBar.style.display = "none";
+  if (headerBackBtn) {
+    headerBackBtn.style.display = "none";
+  }
 }
+
+function cancelAttachmentAndReturnToChat(fromPopState = false) {
+  clearFilePreview();
+  if (dropOverlay) {
+    dismissDropOverlay();
+  }
+  if (!fromPopState && history.state && history.state.screen === "file_attached") {
+    history.back();
+  }
+  if (messagesContainer) {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+  messageInput.focus();
+}
+
+if (headerBackBtn) {
+  headerBackBtn.addEventListener("click", () => {
+    cancelAttachmentAndReturnToChat();
+  });
+}
+
+removePreviewBtn.addEventListener("click", () => {
+  cancelAttachmentAndReturnToChat();
+});
+
+window.addEventListener("popstate", () => {
+  if (currentFileDataUrl || (filePreviewBar && filePreviewBar.style.display !== "none")) {
+    cancelAttachmentAndReturnToChat(true);
+  }
+});
 
 // Prevent browser default file open behavior when dragging
 window.addEventListener("dragover", (e) => e.preventDefault(), false);
@@ -262,8 +298,8 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     if (dropOverlay && dropOverlay.classList.contains("active")) {
       dismissDropOverlay();
-    } else if (filePreviewBar && filePreviewBar.style.display !== "none") {
-      clearFilePreview();
+    } else if (currentFileDataUrl || (filePreviewBar && filePreviewBar.style.display !== "none")) {
+      cancelAttachmentAndReturnToChat();
     }
   }
 });
@@ -494,6 +530,9 @@ chatForm.addEventListener("submit", async (e) => {
 
     if (msgRes.ok) {
       messageInput.value = "";
+      if (history.state && history.state.screen === "file_attached") {
+        history.replaceState(null, "");
+      }
       clearFilePreview();
       messageInput.focus();
     } else {
